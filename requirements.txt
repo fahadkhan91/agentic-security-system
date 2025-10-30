@@ -3,8 +3,12 @@ plyer==2.1.0
 requests==2.31.0
 streamlit==1.31.0
 pyyaml==6.0.1
+psutil==5.9.8
 
 # For notifications
 # Email: Built into Python (no install needed)
 # WhatsApp: requests (already listed above)
 # Desktop: plyer (already listed above)
+
+# For network monitoring
+# psutil: Monitor network connections and processes

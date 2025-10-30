@@ -78,3 +78,34 @@ detection:
     - keygen
     - password
     - stealer
+
+# Network Monitoring Settings
+network_monitoring:
+  enabled: false  # Set to true to enable network monitoring
+
+  # Local threat feed from your SRX server
+  local_feed_url: "http://localhost/srx/custom-feed.txt"
+
+  # Monitoring behavior
+  scan_interval: 5  # Check connections every N seconds
+  log_all_connections: false  # Log all connections (privacy consideration)
+
+  # Whitelist file (trusted IPs that won't trigger alerts)
+  whitelist_file: "blacklists/ip_whitelist.txt"
+
+  # External threat intelligence feeds (optional)
+  external_feeds:
+    abuseipdb_enabled: false
+    abuseipdb_api_key: "your-api-key-here"
+
+    otx_enabled: false
+    otx_api_key: "your-api-key-here"
+
+  # Cache settings (avoid excessive API calls)
+  cache_duration: 3600  # Cache threat intelligence for 1 hour
+
+  # Auto-block suspicious IPs (requires root/admin)
+  auto_block: false  # WARNING: Can block legitimate traffic
+
+  # Alert threshold
+  notification_on_blacklist_hit: true
