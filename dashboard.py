@@ -25,6 +25,13 @@ from main_simple import (
 # Import notification agent
 from agents.notification_agent import NotificationAgent
 
+# Import network monitor agent
+try:
+    from agents.network_monitor_agent import NetworkMonitorAgent
+    NETWORK_MONITOR_AVAILABLE = True
+except ImportError:
+    NETWORK_MONITOR_AVAILABLE = False
+
 
 # Page configuration
 st.set_page_config(
@@ -96,6 +103,11 @@ if 'initialized' not in st.session_state:
     st.session_state.last_update = datetime.now()
     st.session_state.notification_agent = None
     st.session_state.notifications_enabled = False
+    # Network monitoring
+    st.session_state.network_monitor = None
+    st.session_state.network_enabled = False
+    st.session_state.network_threats = []
+    st.session_state.malicious_connections = []
 
 
 def load_notification_config():
@@ -146,6 +158,32 @@ def load_notification_config():
 
     except Exception as e:
         st.error(f"Error loading notification config: {e}")
+        return None
+
+
+def load_network_monitor_config():
+    """Load configuration and initialize network monitor agent."""
+    if not NETWORK_MONITOR_AVAILABLE:
+        return None
+
+    config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
+
+    if not os.path.exists(config_path):
+        return None
+
+    try:
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+
+        network_config = config.get('network_monitoring', {})
+
+        if not network_config.get('enabled', False):
+            return None
+
+        return NetworkMonitorAgent(network_config)
+
+    except Exception as e:
+        st.error(f"Error loading network monitor config: {e}")
         return None
 
 
@@ -419,6 +457,109 @@ def display_system_info():
     """)
 
 
+def display_network_monitor():
+    """Display network monitoring status and threats."""
+    if not st.session_state.network_monitor:
+        return
+
+    st.markdown("### 🌐 Network Monitoring")
+
+    # Get stats from network monitor
+    stats = st.session_state.network_monitor.get_statistics()
+
+    # Network statistics
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric(
+            label="🔍 Connections Checked",
+            value=stats.get('total_connections', 0)
+        )
+
+    with col2:
+        st.metric(
+            label="🚨 Blocked",
+            value=stats.get('blocked_connections', 0),
+            delta=None
+        )
+
+    with col3:
+        st.metric(
+            label="📊 Blacklist Size",
+            value=stats.get('blacklist_size', 0)
+        )
+
+    with col4:
+        st.metric(
+            label="🌍 Unique IPs",
+            value=stats.get('unique_ips_seen', 0)
+        )
+
+    # Display malicious connections if any
+    threats = st.session_state.network_monitor.get_recent_threats(10)
+
+    if threats:
+        st.markdown("#### 🚨 Malicious Connections Detected")
+
+        for threat in reversed(threats):
+            st.markdown(f"""
+            <div style='background-color: #ff4444; padding: 15px; border-radius: 10px;
+                        color: white; margin: 10px 0;'>
+                <h4 style='margin: 0; color: white;'>⚠️ Connection to Blacklisted IP</h4>
+                <p style='margin: 5px 0;'><strong>IP:</strong> {threat['ip']}:{threat['port']}</p>
+                <p style='margin: 5px 0;'><strong>Process:</strong> {threat['process_name']} (PID: {threat['process_pid']})</p>
+                <p style='margin: 5px 0;'><strong>Time:</strong> {threat['timestamp'].strftime('%H:%M:%S')}</p>
+                <p style='margin: 5px 0;'><strong>Threat Score:</strong> {threat['threat_score']}/100</p>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.success("✅ No malicious connections detected")
+
+    # SRX Feed Status
+    if stats.get('last_feed_update'):
+        st.info(f"🔗 SRX Feed: Connected ({stats['blacklist_size']} IPs loaded)")
+    else:
+        st.warning("⚠️ SRX Feed: Not loaded")
+
+
+def scan_network_connections():
+    """Scan network connections for threats."""
+    if not st.session_state.network_monitor:
+        return
+
+    # Run one scan cycle
+    st.session_state.network_monitor.monitor_connections()
+
+    # Get malicious connections
+    threats = st.session_state.network_monitor.get_recent_threats()
+
+    # Send notifications for new threats
+    for threat in threats:
+        # Check if we already notified about this
+        if threat not in st.session_state.network_threats:
+            st.session_state.network_threats.append(threat)
+
+            # Send notification if enabled
+            if st.session_state.notification_agent and st.session_state.notifications_enabled:
+                # Convert to format compatible with notification agent
+                threat_info = {
+                    'urgency': 'HIGH',
+                    'filename': f"Network: {threat['process_name']}",
+                    'threat_score': threat['threat_score'],
+                    'reasons': [
+                        f"Connection to blacklisted IP: {threat['ip']}:{threat['port']}",
+                        f"Process: {threat['process_name']} (PID: {threat['process_pid']})",
+                        f"Source: SRX Blacklist"
+                    ],
+                    'timestamp': threat['timestamp']
+                }
+
+                try:
+                    st.session_state.notification_agent.send_threat_alert(threat_info)
+                except Exception as e:
+                    st.warning(f"Failed to send network threat notification: {e}")
+
+
 # Main Dashboard
 def main():
     """Main dashboard function."""
@@ -426,6 +567,12 @@ def main():
     # Initialize notification agent if not already done
     if st.session_state.notification_agent is None:
         st.session_state.notification_agent = load_notification_config()
+
+    # Initialize network monitor if not already done
+    if st.session_state.network_monitor is None and NETWORK_MONITOR_AVAILABLE:
+        st.session_state.network_monitor = load_network_monitor_config()
+        if st.session_state.network_monitor:
+            st.session_state.network_enabled = True
 
     # Header
     display_header()
@@ -515,6 +662,15 @@ def main():
 
         with col2:
             display_threat_feed()
+
+        # Network monitoring section (if enabled)
+        if st.session_state.network_enabled and st.session_state.network_monitor:
+            st.markdown("---")
+            display_network_monitor()
+
+            # Scan network connections
+            if st.session_state.monitoring:
+                scan_network_connections()
 
         # Auto-refresh
         if auto_refresh and st.session_state.monitoring:
