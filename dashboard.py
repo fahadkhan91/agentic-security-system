@@ -9,6 +9,7 @@ import os
 import sys
 import time
 import threading
+import yaml
 from datetime import datetime
 from pathlib import Path
 
@@ -20,6 +21,9 @@ from main_simple import (
     FileWatcherAgent, ScannerAgent, CoordinatorAgent,
     AlertAgent, SUSPICIOUS_EXTENSIONS, SUSPICIOUS_KEYWORDS
 )
+
+# Import notification agent
+from agents.notification_agent import NotificationAgent
 
 
 # Page configuration
@@ -90,6 +94,59 @@ if 'initialized' not in st.session_state:
     st.session_state.critical_threats = 0
     st.session_state.watch_path = os.path.expanduser("~/Downloads")
     st.session_state.last_update = datetime.now()
+    st.session_state.notification_agent = None
+    st.session_state.notifications_enabled = False
+
+
+def load_notification_config():
+    """Load configuration and initialize notification agent."""
+    config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
+
+    if not os.path.exists(config_path):
+        return None
+
+    try:
+        with open(config_path, 'r') as f:
+            config = yaml.safe_load(f)
+
+        # Create notification agent configuration
+        notification_config = {}
+
+        # Email settings
+        email_config = config.get('email', {})
+        notification_config['email_enabled'] = email_config.get('enabled', False)
+        notification_config['email_from'] = email_config.get('from', '')
+        notification_config['email_to'] = email_config.get('to', '')
+        notification_config['email_password'] = email_config.get('password', '')
+        notification_config['smtp_server'] = email_config.get('smtp_server', 'smtp.gmail.com')
+        notification_config['smtp_port'] = email_config.get('smtp_port', 587)
+
+        # WhatsApp settings
+        whatsapp_config = config.get('whatsapp', {})
+        notification_config['whatsapp_enabled'] = whatsapp_config.get('enabled', False)
+        notification_config['whatsapp_method'] = whatsapp_config.get('method', 'callmebot')
+
+        # CallMeBot
+        callmebot_config = whatsapp_config.get('callmebot', {})
+        notification_config['callmebot_phone'] = callmebot_config.get('phone', '')
+        notification_config['callmebot_apikey'] = callmebot_config.get('apikey', '')
+
+        # Twilio
+        twilio_config = whatsapp_config.get('twilio', {})
+        notification_config['twilio_account_sid'] = twilio_config.get('account_sid', '')
+        notification_config['twilio_auth_token'] = twilio_config.get('auth_token', '')
+        notification_config['twilio_from'] = twilio_config.get('from', '')
+        notification_config['twilio_to'] = twilio_config.get('to', '')
+
+        # Desktop settings
+        desktop_config = config.get('desktop', {})
+        notification_config['desktop_enabled'] = desktop_config.get('enabled', True)
+
+        return NotificationAgent(notification_config)
+
+    except Exception as e:
+        st.error(f"Error loading notification config: {e}")
+        return None
 
 
 def display_header():
@@ -286,6 +343,13 @@ def scan_existing_files():
                 if decision['urgency'] == 'CRITICAL':
                     st.session_state.critical_threats += 1
 
+                # Send notifications if agent is available
+                if st.session_state.notification_agent and st.session_state.notifications_enabled:
+                    try:
+                        st.session_state.notification_agent.send_threat_alert(threat_info)
+                    except Exception as e:
+                        st.warning(f"Failed to send notification: {e}")
+
     except Exception as e:
         st.error(f"Error scanning files: {e}")
 
@@ -359,6 +423,10 @@ def display_system_info():
 def main():
     """Main dashboard function."""
 
+    # Initialize notification agent if not already done
+    if st.session_state.notification_agent is None:
+        st.session_state.notification_agent = load_notification_config()
+
     # Header
     display_header()
 
@@ -381,6 +449,37 @@ def main():
         st.session_state.alerts_sent = 0
         st.session_state.critical_threats = 0
         st.rerun()
+
+    st.sidebar.markdown("---")
+
+    # Notification settings
+    st.sidebar.markdown("### 📢 Notifications")
+
+    if st.session_state.notification_agent:
+        st.session_state.notifications_enabled = st.sidebar.checkbox(
+            "Enable Notifications",
+            value=st.session_state.notifications_enabled,
+            help="Send email/WhatsApp/desktop alerts for threats"
+        )
+
+        # Show notification status
+        if st.session_state.notifications_enabled:
+            agent = st.session_state.notification_agent
+            channels = []
+            if agent.email_enabled:
+                channels.append("📧 Email")
+            if agent.whatsapp_enabled:
+                channels.append("📱 WhatsApp")
+            if agent.desktop_enabled:
+                channels.append("🖥️ Desktop")
+
+            if channels:
+                st.sidebar.success(f"✓ Active: {', '.join(channels)}")
+            else:
+                st.sidebar.warning("⚠️ No channels configured")
+    else:
+        st.sidebar.info("ℹ️ config.yaml not found. Notifications disabled.")
+        st.sidebar.caption("Create config.yaml from config.yaml.example to enable notifications.")
 
     st.sidebar.markdown("---")
 
