@@ -116,11 +116,18 @@ class NetworkMonitorAgent(BaseSecurityAgent):
                         continue
 
                     # Extract IP (handle various formats)
-                    # Format 1: Just IP
-                    # Format 2: IP,description
-                    # Format 3: IP	description
+                    # Format 1: Just IP (e.g., 1.1.1.1)
+                    # Format 2: IP/CIDR (e.g., 1.1.1.1/32)
+                    # Format 3: IP,description
+                    # Format 4: IP	description
                     parts = line.replace('\t', ',').split(',')
-                    ip = parts[0].strip()
+                    ip_part = parts[0].strip()
+
+                    # Remove CIDR notation if present (e.g., /32)
+                    if '/' in ip_part:
+                        ip = ip_part.split('/')[0].strip()
+                    else:
+                        ip = ip_part
 
                     # Basic IP validation
                     if self.is_valid_ip(ip):
