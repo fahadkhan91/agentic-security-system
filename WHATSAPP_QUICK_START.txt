@@ -1,0 +1,199 @@
+================================================================================
+                    WHATSAPP SETUP - SUPER SIMPLE GUIDE
+                          (5 Minutes - FREE!)
+================================================================================
+
+STEP 1: ADD CALLMEBOT TO YOUR PHONE
+------------------------------------
+📱 Open Contacts App on Your Phone
+➕ Add New Contact:
+   Name: CallMeBot
+   Phone: +34 644 32 88 08
+💾 Save
+
+STEP 2: ACTIVATE WHATSAPP
+--------------------------
+📱 Open WhatsApp
+💬 Start chat with CallMeBot
+✍️  Type EXACTLY this message:
+
+   I allow callmebot to send me messages
+
+📤 Send the message
+⏳ Wait 5-10 seconds
+📥 You'll receive a reply with your API key!
+
+   Example reply:
+   ┌─────────────────────────────────────┐
+   │ API Activated for +923001234567     │
+   │                                     │
+   │ Your APIKEY is 123456               │
+   │                                     │
+   │ To send messages use: https://...   │
+   └─────────────────────────────────────┘
+
+📝 WRITE DOWN YOUR API KEY! (the number after "Your APIKEY is")
+   In this example: 123456
+   YOUR KEY WILL BE DIFFERENT!
+
+STEP 3: CONFIGURE THE SYSTEM
+-----------------------------
+💻 Open Terminal
+📂 Go to project folder:
+
+   cd /home/fahad/agentic_security_system
+
+📝 Edit config.yaml:
+
+   nano config.yaml
+
+🔍 Find this section (around line 17):
+
+   whatsapp:
+     enabled: false          ← CHANGE TO: true
+     method: "callmebot"
+     callmebot:
+       phone: "+1234567890"  ← CHANGE TO: your phone number
+       apikey: ""            ← PUT YOUR API KEY HERE
+
+✏️  Make it look like THIS (with YOUR details):
+
+   whatsapp:
+     enabled: true
+     method: "callmebot"
+     callmebot:
+       phone: "+923001234567"    ← Your phone with country code
+       apikey: "123456"          ← Your API key from Step 2
+
+💾 Save the file (Ctrl+X, then Y, then Enter)
+
+STEP 4: TEST IT!
+----------------
+🧪 Run test script:
+
+   python3 test_notifications.py
+
+✅ You should see:
+
+   📱 WhatsApp: ✓ SENT to +923001234567
+
+   ✅ Successfully sent 1 notification(s)!
+
+   👀 Check for notifications:
+      📱 Check WhatsApp on: +923001234567
+
+📱 CHECK YOUR PHONE!
+   Open WhatsApp - you should see a message from CallMeBot
+   with the test security alert!
+
+================================================================================
+                              🎉 SUCCESS! 🎉
+================================================================================
+
+If you got the WhatsApp message, you're DONE!
+
+Now when you run the security system:
+  1. Start dashboard: streamlit run dashboard.py
+  2. Click "Start Monitoring"
+  3. Create test file: cd ~/Downloads && echo "test" > virus.exe
+  4. CHECK YOUR PHONE → You'll get WhatsApp alert! 📱
+
+================================================================================
+                         TROUBLESHOOTING
+================================================================================
+
+❌ "Missing CallMeBot configuration"
+   → Check config.yaml has both phone AND apikey
+   → Make sure enabled: true (not false)
+
+❌ No WhatsApp message received
+   → Wait 30 seconds (sometimes delayed)
+   → Check phone number has + and country code
+   → Verify API key is correct (copy from WhatsApp message)
+
+❌ Phone number format confusion
+   Pakistan: +92 then number (remove leading 0)
+      If number is: 0300-1234567
+      Write as: +923001234567
+
+   USA/Canada: +1 then number
+      If number is: (555) 123-4567
+      Write as: +15551234567
+
+   UK: +44 then number (remove leading 0)
+      If number is: 07700 900123
+      Write as: +447700900123
+
+❌ "requests module not found"
+   → Run: pip install requests
+
+================================================================================
+                         COUNTRY CODES
+================================================================================
+
+🇵🇰 Pakistan:     +92
+🇺🇸 USA:          +1
+🇨🇦 Canada:       +1
+🇬🇧 UK:           +44
+🇮🇳 India:        +91
+🇸🇦 Saudi Arabia: +966
+🇦🇪 UAE:          +971
+🇶🇦 Qatar:        +974
+🇪🇬 Egypt:        +20
+🇹🇷 Turkey:       +90
+
+Full list: https://countrycode.org/
+
+================================================================================
+                    EXAMPLE: COMPLETE WORKING CONFIG
+================================================================================
+
+If your phone is: 0300-1234567 (Pakistan)
+And your API key is: 789012
+
+Your config.yaml should have:
+
+whatsapp:
+  enabled: true
+  method: "callmebot"
+  callmebot:
+    phone: "+923001234567"
+    apikey: "789012"
+
+desktop:
+  enabled: true
+
+email:
+  enabled: false
+
+================================================================================
+                         QUICK TEST COMMANDS
+================================================================================
+
+# Test just notifications
+python3 test_notifications.py
+
+# Run full system with dashboard
+streamlit run dashboard.py
+
+# Create test threat (in another terminal)
+cd ~/Downloads && echo "test" > virus.exe
+
+================================================================================
+                              NEED HELP?
+================================================================================
+
+📖 Detailed guide: WHATSAPP_SETUP_TUTORIAL.md
+📧 Email setup (alternative): NOTIFICATION_SETUP.md
+🎬 Full demo guide: COMPLETE_DEMO_GUIDE.md
+
+CallMeBot official site: https://www.callmebot.com/
+
+================================================================================
+
+Still stuck? Try EMAIL notifications instead (also works great!):
+  1. See NOTIFICATION_SETUP.md for email setup
+  2. Takes 5 minutes with Gmail
+  3. Also free and impressive!
+
+Good luck! 🚀

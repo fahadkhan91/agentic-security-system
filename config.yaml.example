@@ -1,0 +1,80 @@
+# Agentic Security System Configuration
+# Copy this file to config.yaml and edit with your settings
+
+# Email Notifications
+email:
+  enabled: false  # Set to true to enable email alerts
+  from: "your-email@gmail.com"  # Your Gmail address
+  to: "recipient@example.com"  # Where to send alerts
+  password: "your-app-password-here"  # Gmail App Password (not your regular password!)
+  smtp_server: "smtp.gmail.com"
+  smtp_port: 587
+
+  # How to get Gmail App Password:
+  # 1. Go to https://myaccount.google.com/security
+  # 2. Enable 2-Step Verification
+  # 3. Go to https://myaccount.google.com/apppasswords
+  # 4. Generate an app password
+  # 5. Use that password here (not your regular Gmail password)
+
+# WhatsApp Notifications
+whatsapp:
+  enabled: false  # Set to true to enable WhatsApp alerts
+  method: "callmebot"  # Options: "callmebot" (free) or "twilio" (paid)
+
+  # CallMeBot (FREE - No credit card needed!)
+  # Setup instructions:
+  # 1. Add +34 644 32 88 08 to your phone contacts as "CallMeBot"
+  # 2. Send this message to CallMeBot via WhatsApp: "I allow callmebot to send me messages"
+  # 3. You'll receive your API key immediately
+  # 4. Enter your phone number and API key below
+  callmebot:
+    phone: "+1234567890"  # Your phone number with country code
+    apikey: "your-api-key-here"  # Your CallMeBot API key
+
+  # Twilio (PAID - Requires account with credit)
+  # Only use if you already have a Twilio account
+  twilio:
+    account_sid: ""  # Your Twilio Account SID
+    auth_token: ""  # Your Twilio Auth Token
+    from: "+1234567890"  # Your Twilio WhatsApp number
+    to: "+1234567890"  # Recipient's WhatsApp number
+
+# Desktop Notifications
+desktop:
+  enabled: true  # Desktop pop-up notifications (always free)
+
+# Monitoring Settings
+monitoring:
+  watch_folders:
+    - "~/Downloads"
+    - "~/Desktop"
+    - "~/Documents"
+
+  # Only send notifications if threat score is above this threshold
+  notification_threshold: 50  # 0-100
+
+# Threat Detection Settings
+detection:
+  # Automatically quarantine files with score above this threshold
+  auto_quarantine_threshold: 70
+
+  # High-risk file extensions (score +40)
+  high_risk_extensions:
+    - .exe
+    - .scr
+    - .vbs
+    - .bat
+    - .cmd
+    - .com
+    - .pif
+
+  # Suspicious keywords in filenames (score +30)
+  suspicious_keywords:
+    - virus
+    - malware
+    - trojan
+    - crack
+    - keygen
+    - password
+    - stealer
